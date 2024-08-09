@@ -53,6 +53,8 @@
 #define DNS_TIMEOUT         20000
 #define MAX_DNS_RETRY_COUNT 5
 
+
+#define TIME_NTP_EPOCH_SEC  (2208988800U)
 /******************************************************
  *               Variable Definitions
  ******************************************************/
@@ -110,10 +112,24 @@ static char *event_type[]     = { [SL_SNTP_CLIENT_START]           = "SNTP Clien
  ******************************************************/
 sl_status_t embedded_sntp_client(void);
 static void application_start(void *argument);
+static uint32_t sntp_get_time_to_int(char *get_time_str);
 
 /******************************************************
  *               Function Definitions
  ******************************************************/
+uint32_t sntp_get_time_to_int(char *get_time_str)
+{
+  /// input format "Time: 3932164995. sec."
+  double ret = 0;
+  char* token = strtok(get_time_str, " ");
+  token = strtok(NULL, ".");
+
+  ret = atof(token);
+  ret -= TIME_NTP_EPOCH_SEC;
+  printf("Time: %.0f\r\n", ret);
+  return (uint32_t)ret;
+}
+
 static sl_status_t module_status_handler(sl_wifi_event_t event, void *data, uint32_t data_length, void *arg)
 {
   UNUSED_PARAMETER(event);
@@ -121,13 +137,13 @@ static sl_status_t module_status_handler(sl_wifi_event_t event, void *data, uint
   sl_si91x_module_state_stats_response_t *notif = (sl_si91x_module_state_stats_response_t *)data;
 
   SL_DEBUG_LOG("---> Module status handler event with length : %lu\r\n", data_length);
-  SL_DEBUG_LOG("  <> Timestamp : %lu, state_code : %u, reason_code : %u, channel : %u, rssi : %u.\n",
+  SL_DEBUG_LOG("  <> Timestamp : %lu, state_code : %u, reason_code : %u, channel : %u, rssi : %u.\r\n",
                notif->timestamp,
                notif->state_code,
                notif->reason_code,
                notif->channel,
                notif->rssi);
-  SL_DEBUG_LOG("  <> BSSID : %x:%x:%x:%x:%x:%x.\n",
+  SL_DEBUG_LOG("  <> BSSID : %x:%x:%x:%x:%x:%x.\r\n",
                notif->bssid[0],
                notif->bssid[1],
                notif->bssid[2],
@@ -195,7 +211,7 @@ static void sntp_client_event_handler(sl_sntp_client_response_t *response,
 {
   uint16_t length = 0;
 
-  printf("\nReceived %s SNTP event with status %s\n",
+  printf("\r\nReceived %s SNTP event with status %s\r\n",
          event_type[response->event_type],
          (0 == response->status) ? "Success" : "Failed");
 
@@ -233,7 +249,7 @@ sl_status_t embedded_sntp_client(void)
     dns_retry_count--;
   } while ((dns_retry_count != 0) && (status != SL_STATUS_OK));
 
-  printf("Ip Address : %u.%u.%u.%u\n",
+  printf("Ip Address : %u.%u.%u.%u\r\n",
          address.ip.v4.bytes[0],
          address.ip.v4.bytes[1],
          address.ip.v4.bytes[2],
@@ -260,7 +276,7 @@ sl_status_t embedded_sntp_client(void)
     }
   } else {
     if (status == SL_STATUS_OK) {
-      printf("SNTP Client started successfully\n");
+      printf("SNTP Client started successfully\r\n");
     } else {
       printf("Failed to start SNTP client: 0x%lx\r\n", status);
       return status;
@@ -282,13 +298,16 @@ sl_status_t embedded_sntp_client(void)
     }
   } else {
     if (status == SL_STATUS_OK) {
-      printf("SNTP Client got TIME successfully\n");
+      printf("SNTP Client got TIME successfully\r\n");
     } else {
       printf("Failed to get time from ntp server : 0x%lx\r\n", status);
       return status;
     }
   }
   print_char_buffer((char *)data, strlen((const char *)data));
+  //printf("%s\r\n", (char *)data); // format "Time: 3932164995. sec."
+  uint32_t get_time = sntp_get_time_to_int((char *)data);
+  printf("Time: %lu\r\n", get_time);
 
   cb_status = SL_STATUS_FAIL;
   status    = sl_sntp_client_get_time_date(data, DATA_BUFFER_LENGTH, SNTP_API_TIMEOUT);
@@ -305,7 +324,7 @@ sl_status_t embedded_sntp_client(void)
     }
   } else {
     if (status == SL_STATUS_OK) {
-      printf("SNTP Client got TIME and DATE successfully\n");
+      printf("SNTP Client got TIME and DATE successfully\r\n");
     } else {
       printf("Failed to get date and time from ntp server : 0x%lx\r\n", status);
       return status;
@@ -329,27 +348,27 @@ sl_status_t embedded_sntp_client(void)
     }
   } else {
     if (status == SL_STATUS_OK) {
-      printf("SNTP Client got server info successfully\n");
+      printf("SNTP Client got server info successfully\r\n");
     } else {
       printf("Failed to get ntp server info : 0x%lx\r\n", status);
       return status;
     }
   }
-  printf("Got Server IP version as : %u\n", serverInfo.ip_version);
+  printf("Got Server IP version as : %u\r\n", serverInfo.ip_version);
   if (4 == serverInfo.ip_version) {
-    printf("IPv4 Address is : %u.%u.%u.%u\n",
+    printf("IPv4 Address is : %u.%u.%u.%u\r\n",
            serverInfo.server_ip_address.ipv4_address[0],
            serverInfo.server_ip_address.ipv4_address[1],
            serverInfo.server_ip_address.ipv4_address[2],
            serverInfo.server_ip_address.ipv4_address[3]);
   } else {
-    printf("IPv6 Address is : %lx:%lx:%lx:%lx\n",
+    printf("IPv6 Address is : %lx:%lx:%lx:%lx\r\n",
            serverInfo.server_ip_address.ipv6_address[0],
            serverInfo.server_ip_address.ipv6_address[1],
            serverInfo.server_ip_address.ipv6_address[2],
            serverInfo.server_ip_address.ipv6_address[3]);
   }
-  printf("SNTP Server Method : %u\n", serverInfo.sntp_method);
+  printf("SNTP Server Method : %u\r\n", serverInfo.sntp_method);
 
   cb_status = SL_STATUS_FAIL;
   status    = sl_sntp_client_stop(SNTP_API_TIMEOUT);
@@ -366,7 +385,7 @@ sl_status_t embedded_sntp_client(void)
     }
   } else {
     if (status == SL_STATUS_OK) {
-      printf("SNTP Client stopped successfully\n");
+      printf("SNTP Client stopped successfully\r\n");
     } else {
       printf("Failed to stop SNTP client: 0x%lx\r\n", status);
       return status;
