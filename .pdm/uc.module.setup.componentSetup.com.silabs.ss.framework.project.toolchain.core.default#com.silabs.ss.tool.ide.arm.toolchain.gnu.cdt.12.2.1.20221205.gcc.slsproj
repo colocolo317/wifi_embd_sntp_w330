@@ -2,8 +2,8 @@
 <project name="uc.module.setup.componentSetup.com.silabs.ss.framework.project.toolchain.core.default#com.silabs.ss.tool.ide.arm.toolchain.gnu.cdt:12.2.1.20221205.gcc" propertyScope="project">
   <folder name="resources">
     <folder name="readme">
-      <file name="output.png" linked="false" uri="studio:/sdk/extension/wiseconnect/examples/snippets/wlan/sntp_client/resources/readme/output.png"/>
-      <file name="sntpclient_soc_ncp.png" linked="false" uri="studio:/sdk/extension/wiseconnect/examples/snippets/wlan/sntp_client/resources/readme/sntpclient_soc_ncp.png"/>
+      <file name="output.png" linked="false" uri="studio:/project/resources/readme/output.png"/>
+      <file name="sntpclient_soc_ncp.png" linked="false" uri="studio:/project/resources/readme/sntpclient_soc_ncp.png"/>
     </folder>
   </folder>
   <folder name="wiseconnect3_sdk_3.3.0">
@@ -173,6 +173,24 @@
                     <file name="sl_si91x_m4_ps.h" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/inc/sl_si91x_m4_ps.h"/>
                   </folder>
                 </folder>
+                <folder name="unified_api">
+                  <folder name="src">
+                    <file name="sl_si91x_calendar.c" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_calendar.c"/>
+                  </folder>
+                  <folder name="inc">
+                    <file name="sl_si91x_calendar.h" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/unified_api/inc/sl_si91x_calendar.h"/>
+                  </folder>
+                </folder>
+                <folder name="service">
+                  <folder name="clock_manager">
+                    <folder name="src">
+                      <file name="sl_si91x_clock_manager.c" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/service/clock_manager/src/sl_si91x_clock_manager.c"/>
+                    </folder>
+                    <folder name="inc">
+                      <file name="sl_si91x_clock_manager.h" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/service/clock_manager/inc/sl_si91x_clock_manager.h"/>
+                    </folder>
+                  </folder>
+                </folder>
                 <folder name="systemlevel">
                   <folder name="inc">
                     <file name="rsi_bod.h" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/systemlevel/inc/rsi_bod.h"/>
@@ -193,7 +211,9 @@
                   <folder name="src">
                     <file name="rsi_ipmu.c" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ipmu.c"/>
                     <file name="rsi_pll.c" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_pll.c"/>
+                    <file name="rsi_rtc.c" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_rtc.c"/>
                     <file name="rsi_temp_sensor.c" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_temp_sensor.c"/>
+                    <file name="rsi_time_period.c" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c"/>
                     <file name="rsi_ulpss_clk.c" uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_ulpss_clk.c"/>
                   </folder>
                 </folder>
@@ -541,10 +561,9 @@
       </folder>
     </folder>
   </folder>
-  <file name="app.c" linked="false" uri="studio:/sdk/extension/wiseconnect/examples/snippets/wlan/sntp_client/app.c"/>
-  <file name="main.c" linked="false" uri="studio:/sdk/extension/wiseconnect/examples/snippets/wlan/sntp_client/main.c"/>
-  <file name="app.h" linked="false" uri="studio:/sdk/extension/wiseconnect/examples/snippets/wlan/sntp_client/app.h"/>
-  <file name="readme.md" linked="false" uri="studio:/sdk/extension/wiseconnect/examples/snippets/wlan/sntp_client/readme.md"/>
+  <file name="main.c" linked="false" uri="studio:/project/main.c"/>
+  <file name="app.h" linked="false" uri="studio:/project/app.h"/>
+  <file name="readme.md" linked="false" uri="studio:/project/readme.md"/>
   <includePath uri="studio:/project/"/>
   <includePath uri="studio:/sdk/extension/wiseconnect/components/service/bsd_socket/inc"/>
   <includePath uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/cmsis_driver/CMSIS/Driver/Include"/>
@@ -556,6 +575,8 @@
   <includePath uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/inc"/>
   <includePath uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/core/config"/>
   <includePath uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/core/common/inc"/>
+  <includePath uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/unified_api/inc"/>
+  <includePath uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/mcu/drivers/service/clock_manager/inc"/>
   <includePath uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/wireless/errno/inc"/>
   <includePath uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/wireless/icmp"/>
   <includePath uri="studio:/sdk/extension/wiseconnect/components/device/silabs/si91x/wireless/firmware_upgrade"/>
