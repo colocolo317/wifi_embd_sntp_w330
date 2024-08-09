@@ -14,9 +14,9 @@
  * sections of the MSLA applicable to Source Code.
  *
  ******************************************************************************/
+#include <sntp_app.h>
 #include "sl_component_catalog.h"
 #include "sl_system_init.h"
-#include "app.h"
 #if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
 #include "sl_power_manager.h"
 #endif
@@ -35,7 +35,7 @@ int main(void)
 
   // Initialize the application. For example, create periodic timer(s) or
   // task(s) if the kernel is present.
-  app_init();
+  sntp_app_init();
 
 #if defined(SL_CATALOG_KERNEL_PRESENT)
   // Start the kernel. Task(s) created in app_init() will start running.

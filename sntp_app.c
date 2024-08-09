@@ -59,8 +59,8 @@
  *               Variable Definitions
  ******************************************************/
 
-const osThreadAttr_t thread_attributes = {
-  .name       = "app",
+const osThreadAttr_t sntp_thread_attributes = {
+  .name       = "sntp_app",
   .attr_bits  = 0,
   .cb_mem     = 0,
   .cb_size    = 0,
@@ -111,13 +111,13 @@ static char *event_type[]     = { [SL_SNTP_CLIENT_START]           = "SNTP Clien
  *               Function Declarations
  ******************************************************/
 sl_status_t embedded_sntp_client(void);
-static void application_start(void *argument);
-static uint32_t sntp_get_time_to_int(char *get_time_str);
+static void sntp_task(void *argument);
+static uint32_t sntp_get_time_to_calendar(char *get_time_str);
 
 /******************************************************
  *               Function Definitions
  ******************************************************/
-uint32_t sntp_get_time_to_int(char *get_time_str)
+uint32_t sntp_get_time_to_calendar(char *get_time_str)
 {
   /// input format "Time: 3932164995. sec."
   double ret = 0;
@@ -153,13 +153,13 @@ static sl_status_t module_status_handler(sl_wifi_event_t event, void *data, uint
   return SL_STATUS_OK;
 }
 
-void app_init(const void *unused)
+void sntp_app_init(const void *unused)
 {
   UNUSED_PARAMETER(unused);
-  osThreadNew((osThreadFunc_t)application_start, NULL, &thread_attributes);
+  osThreadNew((osThreadFunc_t)sntp_task, NULL, &sntp_thread_attributes);
 }
 
-static void application_start(void *argument)
+static void sntp_task(void *argument)
 {
   UNUSED_PARAMETER(argument);
   sl_status_t status;
@@ -244,6 +244,8 @@ sl_status_t embedded_sntp_client(void)
   sl_sntp_server_info_t serverInfo = { 0 };
   int32_t dns_retry_count          = MAX_DNS_RETRY_COUNT;
 
+  UNUSED_VARIABLE(serverInfo);
+
   do {
     status = sl_net_host_get_by_name(NTP_SERVER_IP, DNS_TIMEOUT, SL_NET_DNS_TYPE_IPV4, &address);
     dns_retry_count--;
@@ -305,10 +307,12 @@ sl_status_t embedded_sntp_client(void)
     }
   }
   print_char_buffer((char *)data, strlen((const char *)data));
-  //printf("%s\r\n", (char *)data); // format "Time: 3932164995. sec."
-  uint32_t get_time = sntp_get_time_to_int((char *)data);
+
+  // format "Time: 3932164995. sec."
+  uint32_t get_time = sntp_get_time_to_calendar((char *)data);
   printf("Time: %lu\r\n", get_time);
 
+#if AMPACK_SNTP_FULL_RUN
   cb_status = SL_STATUS_FAIL;
   status    = sl_sntp_client_get_time_date(data, DATA_BUFFER_LENGTH, SNTP_API_TIMEOUT);
   if ((SNTP_API_TIMEOUT == 0) && (SL_STATUS_IN_PROGRESS == status)) {
@@ -369,7 +373,7 @@ sl_status_t embedded_sntp_client(void)
            serverInfo.server_ip_address.ipv6_address[3]);
   }
   printf("SNTP Server Method : %u\r\n", serverInfo.sntp_method);
-
+#endif
   cb_status = SL_STATUS_FAIL;
   status    = sl_sntp_client_stop(SNTP_API_TIMEOUT);
   if ((SNTP_API_TIMEOUT == 0) && (SL_STATUS_IN_PROGRESS == status)) {
