@@ -56,9 +56,12 @@
 
 
 #define TIME_NTP_EPOCH_SEC  (2208988800U)
+
+#define DELAY_HALF_MINUTES(n) ((uint8_t) n * 100000)
 /******************************************************
  *               Variable Definitions
  ******************************************************/
+extern osSemaphoreId_t sem_calendar_update;
 
 const osThreadAttr_t sntp_thread_attributes = {
   .name       = "sntp_app",
@@ -99,6 +102,7 @@ static const sl_wifi_device_configuration_t sntp_client_configuration = {
                    .config_feature_bit_map  = 0 }
 };
 
+static time_t  start_time = 0;
 static uint8_t callback_event = 0;
 static sl_status_t cb_status  = SL_STATUS_FAIL;
 static uint8_t exec_status    = 0;
@@ -113,7 +117,7 @@ static char *event_type[]     = { [SL_SNTP_CLIENT_START]           = "SNTP Clien
  ******************************************************/
 sl_status_t embedded_sntp_client(void);
 static void sntp_task(void *argument);
-static uint32_t sntp_get_time_to_calendar(char *get_time_str);
+
 
 /******************************************************
  *               Function Definitions
@@ -127,7 +131,9 @@ uint32_t sntp_get_time_to_calendar(char *get_time_str)
 
   ret = atof(token);
   ret -= TIME_NTP_EPOCH_SEC;
+#if 0
   printf("Time: %.0f\r\n", ret);
+#endif
   return (uint32_t)ret;
 }
 
@@ -184,14 +190,12 @@ static void sntp_task(void *argument)
 
   embedded_sntp_client();
 
-  while (1) {
-#if defined(SL_CATALOG_POWER_MANAGER_PRESENT)
-    // Let the CPU go to sleep if the system allows it.
-    sl_power_manager_sleep();
-#else
-    osDelay(osWaitForever);
-#endif
+  while (1)
+  {
+    osSemaphoreAcquire(sem_calendar_update ,osWaitForever);
+
   }
+
 }
 
 static void print_char_buffer(char *buffer, uint32_t buffer_length)
@@ -211,10 +215,12 @@ static void sntp_client_event_handler(sl_sntp_client_response_t *response,
                                       uint16_t user_data_length)
 {
   uint16_t length = 0;
-
-  printf("\r\nReceived %s SNTP event with status %s\r\n",
-         event_type[response->event_type],
-         (0 == response->status) ? "Success" : "Failed");
+  if(start_time == 0 && response->event_type == SL_SNTP_CLIENT_GET_TIME)
+  {
+    printf("\r\nReceived %s SNTP event with status %s\r\n",
+           event_type[response->event_type],
+           (0 == response->status) ? "Success" : "Failed");
+  }
 
   if (0 == response->status) {
     if (response->data_length > user_data_length) {
@@ -286,34 +292,46 @@ sl_status_t embedded_sntp_client(void)
     }
   }
 
-  cb_status = SL_STATUS_FAIL;
-  status    = sl_sntp_client_get_time(data, DATA_BUFFER_LENGTH, SNTP_API_TIMEOUT);
-  if ((SNTP_API_TIMEOUT == 0) && (SL_STATUS_IN_PROGRESS == status)) {
-    start = osKernelGetTickCount();
+  while(1)
+  {
+    cb_status = SL_STATUS_FAIL;
+    status    = sl_sntp_client_get_time(data, DATA_BUFFER_LENGTH, SNTP_API_TIMEOUT);
+    if ((SNTP_API_TIMEOUT == 0) && (SL_STATUS_IN_PROGRESS == status)) {
+      start = osKernelGetTickCount();
 
-    while ((SL_SNTP_CLIENT_GET_TIME != callback_event) && (osKernelGetTickCount() - start) <= ASYNC_WAIT_TIMEOUT) {
-      osThreadYield();
-    }
+      while ((SL_SNTP_CLIENT_GET_TIME != callback_event) && (osKernelGetTickCount() - start) <= ASYNC_WAIT_TIMEOUT) {
+        osThreadYield();
+      }
 
-    if (cb_status != SL_STATUS_OK) {
-      printf("Failed to get async time from ntp server : 0x%lx\r\n", status);
-      return cb_status;
-    }
-  } else {
-    if (status == SL_STATUS_OK) {
-      printf("SNTP Client got TIME successfully\r\n");
+      if (cb_status != SL_STATUS_OK) {
+        printf("Failed to get async time from ntp server : 0x%lx\r\n", status);
+        //return cb_status;
+      }
     } else {
-      printf("Failed to get time from ntp server : 0x%lx\r\n", status);
-      return status;
+      if (status == SL_STATUS_OK) {
+        printf("SNTP Client got TIME successfully\r\n");
+      } else {
+        printf("Failed to get time from ntp server : 0x%lx\r\n", status);
+        //return status;
+      }
     }
+    if(start_time == 0)
+    {
+      print_char_buffer((char *)data, strlen((const char *)data));
+      // format "Time: 3932164995. sec."
+      uint32_t get_time = sntp_get_time_to_calendar((char *)data);
+      start_time = get_time;
+      calendar_init((time_t) get_time);
+    }
+    else
+    {
+      if(cb_status == SL_STATUS_OK)
+      { calendar_compare_time((char *)data); }
+    }
+
+    // wait for 5 minutes
+    osDelay(DELAY_HALF_MINUTES(10)); // 100000 ticks around 30 seconds
   }
-  print_char_buffer((char *)data, strlen((const char *)data));
-
-  // format "Time: 3932164995. sec."
-  uint32_t get_time = sntp_get_time_to_calendar((char *)data);
-  printf("Time: %lu\r\n", get_time);
-
-  calendar_init((time_t) get_time);
 
 #if AMPACK_SNTP_FULL_RUN
   cb_status = SL_STATUS_FAIL;
@@ -411,3 +429,5 @@ sl_status_t embedded_sntp_client(void)
 
   return SL_STATUS_OK;
 }
+
+

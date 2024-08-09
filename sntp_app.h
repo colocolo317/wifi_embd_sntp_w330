@@ -17,11 +17,12 @@
 
 #ifndef SNTP_APP_H
 #define SNTP_APP_H
+#include "stdint.h"
 
 /***************************************************************************/ /**
  * Initialize application.
  ******************************************************************************/
-void sntp_app_init(void);
-
+void sntp_app_init(const void *unused);
+uint32_t sntp_get_time_to_calendar(char *get_time_str);
 
 #endif // SNTP_APP_H

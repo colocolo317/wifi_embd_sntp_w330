@@ -14,10 +14,12 @@
  * sections of the MSLA applicable to Source Code.
  *
  ******************************************************************************/
+#include "cmsis_os2.h"
 #include "sl_si91x_calendar.h"
 #include "rsi_debug.h"
 #include "sl_si91x_clock_manager.h"
 #include "calendar_app.h"
+#include "sntp_app.h"
 
 /*******************************************************************************
  ***************************  Defines / Macros  ********************************
@@ -54,6 +56,13 @@
 
 #define SOC_PLL_CLK  ((uint32_t)(180000000)) // 180MHz default SoC PLL Clock as source to Processor
 #define INTF_PLL_CLK ((uint32_t)(180000000)) // 180MHz default Interface PLL Clock as source to all peripherals
+
+#define PRINT_PERIOD (5)
+/*******************************************************************************
+ *****************************  Local Variable  ********************************
+ ******************************************************************************/
+time_t calendar_start;
+osSemaphoreId_t sem_calendar_update = NULL;
 /*******************************************************************************
  **********************  Local Function prototypes   ***************************
  ******************************************************************************/
@@ -113,11 +122,37 @@ static void default_clock_configuration(void)
   // and it runs at 180MHz
   sl_si91x_clock_manager_set_pll_freq(INFT_PLL, INTF_PLL_CLK, PLL_REF_CLK_VAL_XTAL);
 }
+
+void calendar_compare_time(char* data)
+{
+  static uint32 last_sntp_time = 0;
+  sl_calendar_datetime_config_t rtc_time;
+  sl_si91x_calendar_get_date_time(&rtc_time);
+  uint32_t sntp_time = sntp_get_time_to_calendar(data);
+
+  if(sntp_time == last_sntp_time)
+  {
+    DEBUGOUT("SNTP get time as last one. Pass\r\n");
+    return;
+  }
+  last_sntp_time = sntp_time;
+  sntp_time += TAIPEI_TIME_ZONE_SHIFT;
+  uint32_t rtc_count = (uint32_t)calendar_time_to_unix(rtc_time);
+  int32_t diff =  rtc_count - sntp_time;
+  DEBUGOUT("RTC time: %lu, SNTP time: %lu, Diff: %lu\r\n",rtc_count, sntp_time, diff );
+}
+
 /*******************************************************************************
  * Calendar example initialization function
  ******************************************************************************/
 void calendar_init(time_t sntp_get_time)
 {
+  if(sem_calendar_update == NULL)
+  {
+    sem_calendar_update = osSemaphoreNew(1, 0, NULL);
+    DEBUGOUT("calendar_update sem: %lu\r\n", (uint32_t)sem_calendar_update);
+  }
+  calendar_start = sntp_get_time;
   sl_calendar_datetime_config_t datetime_config;
   sl_calendar_datetime_config_t get_datetime;
   sl_status_t status;
@@ -341,10 +376,16 @@ static void on_alarm_callback(void)
 #if defined(SEC_INTR) && (SEC_INTR == ENABLE)
 static void on_sec_callback(void)
 {
-  sl_calendar_datetime_config_t get_time;
-  sl_si91x_calendar_get_date_time(&get_time);
+  static uint8_t count = 0;
+  if((++count) >= PRINT_PERIOD)
+  {
+    sl_calendar_datetime_config_t get_time;
+    sl_si91x_calendar_get_date_time(&get_time);
 
-  calendar_print_hhmmss(get_time);
+    calendar_print_hhmmss(get_time);
+    count = 0;
+  }
+
   is_sec_callback_triggered = true;
 }
 #endif

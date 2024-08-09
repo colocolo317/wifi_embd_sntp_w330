@@ -41,6 +41,8 @@
  ******************************************************************************/
 void calendar_init(time_t sntp_get_time);
 
+void calendar_compare_time(char* data);
+
 /***************************************************************************/ /**
  * Function will run continuously and will wait for trigger
  * 
