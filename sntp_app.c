@@ -38,6 +38,7 @@
 #include "sl_wifi_callback_framework.h"
 #include "sl_si91x_types.h"
 #include "string.h"
+#include "calendar_app.h"
 
 /******************************************************
  *                    Constants
@@ -311,6 +312,8 @@ sl_status_t embedded_sntp_client(void)
   // format "Time: 3932164995. sec."
   uint32_t get_time = sntp_get_time_to_calendar((char *)data);
   printf("Time: %lu\r\n", get_time);
+
+  calendar_init((time_t) get_time);
 
 #if AMPACK_SNTP_FULL_RUN
   cb_status = SL_STATUS_FAIL;

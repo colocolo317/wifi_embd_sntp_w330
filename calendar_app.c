@@ -58,6 +58,7 @@
  **********************  Local Function prototypes   ***************************
  ******************************************************************************/
 static void calendar_print_datetime(sl_calendar_datetime_config_t data);
+static void calendar_print_hhmmss(sl_calendar_datetime_config_t data);
 #if defined(ALARM_EXAMPLE) && (ALARM_EXAMPLE == ENABLE)
 static void on_alarm_callback(void);
 boolean_t is_alarm_callback_triggered = false;
@@ -74,7 +75,8 @@ static void default_clock_configuration(void);
 /*******************************************************************************
  **************************   GLOBAL FUNCTIONS   *******************************
  ******************************************************************************/
-void unix_time_to_calendar(time_t unix, sl_calendar_datetime_config_t *date) {
+void unix_time_to_calendar(time_t unix, sl_calendar_datetime_config_t *date)
+{
   struct tm *time = gmtime(&unix);
 
   date->Century = ((time->tm_year / 100) % 4) + 1;
@@ -86,6 +88,19 @@ void unix_time_to_calendar(time_t unix, sl_calendar_datetime_config_t *date) {
   date->Second  = time->tm_sec;
   date->MilliSeconds = 0;
   date->DayOfWeek = time->tm_wday;
+}
+
+time_t calendar_time_to_unix(const sl_calendar_datetime_config_t date)
+{
+  struct tm time_s;
+
+  time_s.tm_year = (date.Year + 100);  // tm_year start from 1900
+  time_s.tm_mon  = (date.Month - 1);
+  time_s.tm_mday = date.Day;
+  time_s.tm_hour = date.Hour;
+  time_s.tm_min  = date.Minute;
+  time_s.tm_sec  = date.Second;
+  return mktime(&time_s);
 }
 
 // Function to configure clock on powerup
@@ -296,6 +311,12 @@ static void calendar_print_datetime(sl_calendar_datetime_config_t data)
   DEBUGOUT(" Century: %d", data.Century);
 }
 
+static void calendar_print_hhmmss(sl_calendar_datetime_config_t data)
+{
+  DEBUGOUT("Time - %02u:%02u:%02u, ", data.Hour, data.Minute, data.Second);
+  DEBUGOUT("%lu\r\n",(uint32_t) calendar_time_to_unix(data));
+}
+
 /*******************************************************************************
  * Callback function of alarm, it is a periodic alarm
  * After the callback is triggered, new alarm is set according to the ALARM_TRIGGER_TIME
@@ -320,8 +341,10 @@ static void on_alarm_callback(void)
 #if defined(SEC_INTR) && (SEC_INTR == ENABLE)
 static void on_sec_callback(void)
 {
-  static uint32_t sec = 0;
-  DEBUGOUT("%5lu sec\r\n", sec++);
+  sl_calendar_datetime_config_t get_time;
+  sl_si91x_calendar_get_date_time(&get_time);
+
+  calendar_print_hhmmss(get_time);
   is_sec_callback_triggered = true;
 }
 #endif
