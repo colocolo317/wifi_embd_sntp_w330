@@ -53,11 +53,13 @@
 #define ALARM_MILLISECONDS 100u
 
 #define CAL_RC_CLOCK 2u
+#define KHZ_XTAL_CLOCK 4u
 
 #define SOC_PLL_CLK  ((uint32_t)(180000000)) // 180MHz default SoC PLL Clock as source to Processor
 #define INTF_PLL_CLK ((uint32_t)(180000000)) // 180MHz default Interface PLL Clock as source to all peripherals
 
 #define PRINT_PERIOD (5)
+#define SET_PLL_CLOCK PLL_REF_CLK_VAL_XTAL
 /*******************************************************************************
  *****************************  Local Variable  ********************************
  ******************************************************************************/
@@ -115,12 +117,26 @@ time_t calendar_time_to_unix(const sl_calendar_datetime_config_t date)
 // Function to configure clock on powerup
 static void default_clock_configuration(void)
 {
+  sl_status_t status;
   // Core Clock runs at 180MHz SOC PLL Clock
-  sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK, SOC_PLL_CLK);
-
+  status = sl_si91x_clock_manager_m4_set_core_clk(M4_SOCPLLCLK, SOC_PLL_CLK);
+  DEBUGOUT("clock config m4 set core clk: 0x%lX\r\n", status);
   // All peripherals' source to be set to Interface PLL Clock
   // and it runs at 180MHz
-  sl_si91x_clock_manager_set_pll_freq(INFT_PLL, INTF_PLL_CLK, PLL_REF_CLK_VAL_XTAL);
+  status = sl_si91x_clock_manager_set_pll_freq(INFT_PLL, INTF_PLL_CLK, SET_PLL_CLOCK);
+  DEBUGOUT("clock config set pll freq: 0x%lX\r\n", status);
+
+  switch(SET_PLL_CLOCK)
+  {
+    case PLL_REF_CLK_VAL_RC_32MHZ:
+      DEBUGOUT("use PLL_REF_CLK_VAL_RC_32MHZ\r\n");
+      break;
+    case PLL_REF_CLK_VAL_XTAL:
+      DEBUGOUT("use PLL_REF_CLK_VAL_XTAL\r\n");
+      break;
+    default:
+      DEBUGOUT("use unknown clk\r\n");
+  }
 }
 
 void calendar_compare_time(char* data)
@@ -139,7 +155,7 @@ void calendar_compare_time(char* data)
   sntp_time += TAIPEI_TIME_ZONE_SHIFT;
   uint32_t rtc_count = (uint32_t)calendar_time_to_unix(rtc_time);
   int32_t diff =  rtc_count - sntp_time;
-  DEBUGOUT("RTC time: %lu, SNTP time: %lu, Diff: %lu\r\n",rtc_count, sntp_time, diff );
+  DEBUGOUT("RTC  time %11lu\r\nSNTP time %11lu\r\n     Diff %11ld\r\n",rtc_count, sntp_time, diff );
 }
 
 /*******************************************************************************
@@ -163,7 +179,7 @@ void calendar_init(time_t sntp_get_time)
   do
   {
     //Configuration of clock and initialization of calendar
-    status = sl_si91x_calendar_set_configuration(CAL_RC_CLOCK);
+    status = sl_si91x_calendar_set_configuration(KHZ_XTAL_CLOCK); // todo: try KHZ_XTAL_CLK_SEL (4)
     if (status != SL_STATUS_OK) {
       DEBUGOUT("sl_si91x_calendar_set_configuration: Invalid Parameters, Error Code : %lu \r\n", status);
       break;
@@ -348,7 +364,7 @@ static void calendar_print_datetime(sl_calendar_datetime_config_t data)
 
 static void calendar_print_hhmmss(sl_calendar_datetime_config_t data)
 {
-  DEBUGOUT("Time - %02u:%02u:%02u, ", data.Hour, data.Minute, data.Second);
+  DEBUGOUT("Time %02u:%02u:%02u ", data.Hour, data.Minute, data.Second);
   DEBUGOUT("%lu\r\n",(uint32_t) calendar_time_to_unix(data));
 }
 
