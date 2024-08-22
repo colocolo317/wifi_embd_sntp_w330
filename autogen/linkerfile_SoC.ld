@@ -47,10 +47,13 @@ SECTIONS
 	.text :
 	{
 		KEEP(*(.isr_vector))
+		  *(EXCLUDE_FILE(*UDMA.o).text*)        
+			 KEEP(*(.init))
+			 KEEP(*(.fini))
     
-            *(EXCLUDE_FILE(*UDMA.o).text*)        
-			KEEP(*(.init))
-			KEEP(*(.fini))
+			
+     	  	
+		
 
 		/* .ctors */
 		*crtbegin.o(.ctors)
@@ -83,26 +86,27 @@ SECTIONS
 	__exidx_end = .;
 	__etext = .;
 	
+
+
+	/* _sidata is used in code startup code */
+	_sidata = __etext;
+
 	
 
 	
-	/* _sidata is used in code startup code */
-	_sidata = __etext;
 	
 	.data :
-	
+
 	{
 		__data_start__ = .;
 		
 		/* _sdata is used in startup code */
 		_sdata = __data_start__;
 		*(.data*)
-		
-		
 		*UDMA.o(.text*)
 		
-
-
+		
+		
 		. = ALIGN(4);
 		/* preinit data */
 		PROVIDE_HIDDEN (__preinit_array_start = .);
@@ -131,7 +135,7 @@ SECTIONS
 		
 		/* _edata is used in startup code */
 		_edata = __data_end__; 
-	} > ram AT> rom	
+	} > ram AT> rom
 	
 	.bss (NOLOAD) :
 	{
@@ -140,9 +144,9 @@ SECTIONS
 		*(.bss*)
 		*(COMMON)
 		. = ALIGN(4);
-		__bss_end__ = .; 
+		__bss_end__ = .;
 	} > ram 
-	
+
 	
 	.stack (NOLOAD):
 	{
@@ -152,25 +156,22 @@ SECTIONS
 		__StackTop = .;
 		PROVIDE(__stack = __StackTop);			
 	} > ram
-			
   	.heap (COPY):
   	{
 		__HeapBase = .;
 		__end__ = .;
 		end = __end__;
 		_end = __end__;
-		KEEP(*(.heap*))	
+		KEEP(*(.heap*))
 		. = ORIGIN(ram) + LENGTH(ram);
-  		
 		__HeapLimit = .;			
   	} > ram
-  
+ 
 	__heap_size = __HeapLimit - __HeapBase;
 	.udma_addr0 :
 	{
 		*(.udma_addr0*)
 	} > udma0 AT> rom
-	
 
 	.udma_addr1 :
 	{

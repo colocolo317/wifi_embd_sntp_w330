@@ -42,7 +42,7 @@
 //  <i> Enable: Peripheral configuration is taken straight from the configuration set in the universal configuration (UC).
 //  <i> Disable: If the application demands it to be modified during runtime, use the sl_si91x_calendar_set_configuration API to modify the peripheral configuration.
 //  <i> Default: 1
-#define CALENDAR_UC 1
+#define CALENDAR_UC 0
 
 // <o CALENDAR_CLOCK_TYPE> Clock Source
 //   <CALENDAR_RC_CLOCK=> RC Clock

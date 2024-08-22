@@ -6,7 +6,7 @@
       <file name="sntpclient_soc_ncp.png" linked="false" uri="studio:/project/resources/readme/sntpclient_soc_ncp.png"/>
     </folder>
   </folder>
-  <folder name="wiseconnect3_sdk_3.3.0">
+  <folder name="wiseconnect3_sdk_3.3.1">
     <folder name="components">
       <folder name="device">
         <folder name="silabs">
@@ -429,7 +429,7 @@
       </folder>
     </folder>
   </folder>
-  <folder name="simplicity_sdk_2024.6.0">
+  <folder name="simplicity_sdk_2024.6.1">
     <folder name="platform">
       <folder name="common">
         <folder name="inc">
